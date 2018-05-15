@@ -33,9 +33,23 @@ app.use((req, res, next) => {
 });
 
 app.post("/wsbe/report", (request, response) => {
+	// Delete draft report first
+	DraftReport.findAll((err, drafts) => {
+		if (err) {
+			response.status(500).json({error: "Could not fetch draft reports"});
+			return;
+		}
+		DraftReport.findByIdAndRemove(drafts[0]._id, (error, draft) => {
+			if (error) {
+				response.status(500).json({error: "Could not delete the draft report"});
+				return;
+			}
+		});
+	});
+
 	let data = {
-		report_date: request.body.report_name,
-		ws_start: request.body.ws_start,
+		report_date: request.body.report_date,
+			ws_start: request.body.ws_start,
 		ws_end: request.body.ws_end,
 		bugzillaURL: request.body.bugzillaURL,
 		highlights: request.body.highlights,
@@ -50,7 +64,8 @@ app.post("/wsbe/report", (request, response) => {
 			response.status(500).json({error: "Error saving the report"})
 			return;
 		}
-		response.json({success: "Report recorded successfully"});
+
+		response.json({success: "Report recorded successfully and draft report is deleted successfully"});
 		return;
 	});
 });
@@ -101,12 +116,12 @@ app.post("/wsbe/draft", (request, response) => {
 });
 
 app.put("/wsbe/draft", (request, response) => {
-	DraftReport.findAll((err, draft) => {
+	DraftReport.findAll((err, drafts) => {
 		if (err) {
 			response.status(500).json({error: "Could not fetch draft report"});
 			return;
 		}
-		DraftReport.findByIdAndUpdate(draft[0]._id, request.body, {new: true}, (error, newDraft) => {
+		DraftReport.findByIdAndUpdate(drafts[0]._id, request.body, {new: true}, (error, newDraft) => {
 			if (error) {
 				response.status(500).json({error: "Could not update draft report"});
 				return;
@@ -118,12 +133,12 @@ app.put("/wsbe/draft", (request, response) => {
 });
 
 app.get("/wsbe/draft", (request, response) => {
-	DraftReport.findAll((err, draft) => {
+	DraftReport.findAll((err, drafts) => {
 		if (err) {
 			response.status(500).json({error: "Could not fetch draft report"});
 			return;
 		}
-		response.json(draft);
+		response.json(drafts);
 		return;
 	});
 });
