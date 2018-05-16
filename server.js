@@ -2,7 +2,8 @@ const express = require("express"),
 	bodyParser = require("body-parser"),
 	mongoose = require("mongoose"),
 	WSReport = require("./models/report"),
-	DraftReport = require("./models/draft");
+	DraftReport = require("./models/draft"),
+	errorMessages = require("./errorMessages");
 
 const app = express();
 
@@ -32,66 +33,74 @@ app.use((req, res, next) => {
 	next();
 });
 
+// TODO: Error: Can't set headers after they are sent.
+
 app.post("/wsbe/report", (request, response) => {
 	// Delete draft report first
 	DraftReport.findAll((err, drafts) => {
 		if (err) {
-			response.status(500).json({error: "Could not fetch draft reports"});
-			return;
+			let msg = errorMessages.fetchDraftReportError;
+			console.log(msg);
+			return response.status(500).json({error: msg});
 		}
 		DraftReport.findByIdAndRemove(drafts[0]._id, (error, draft) => {
 			if (error) {
-				response.status(500).json({error: "Could not delete the draft report"});
-				return;
+				let msg = errorMessages.deleteDraftError;
+				console.log(msg);
+				return response.status(500).json({error: msg});
 			}
+			console.log("A draft report was deleted successfully");
+			
+			let data = {
+				report_date: request.body.report_date,
+					ws_start: request.body.ws_start,
+				ws_end: request.body.ws_end,
+				bugzillaURL: request.body.bugzillaURL,
+				highlights: request.body.highlights,
+				codeReviews: request.body.codeReviews,
+				planForWeek: request.body.planForWeek
+			};
+			console.log("Main Report data: ", data);
+			let report = new WSReport(data);
+			report.save((err, report) => {
+				if (err) {
+					let msg = errorMessages.saveReportError;
+					console.log(msg);
+					return response.status(500).json({error: msg})
+				}
+				return response.json({success: "A new report recorded successfully"});
+			});
+
 		});
-	});
-
-	let data = {
-		report_date: request.body.report_date,
-			ws_start: request.body.ws_start,
-		ws_end: request.body.ws_end,
-		bugzillaURL: request.body.bugzillaURL,
-		highlights: request.body.highlights,
-		codeReviews: request.body.codeReviews,
-		planForWeek: request.body.planForWeek
-	};
-	console.log("Report data: ", data);
-	let report = new WSReport(data);
-
-	report.save((err, report) => {
-		if (err) {
-			response.status(500).json({error: "Error saving the report"})
-			return;
-		}
-
-		response.json({success: "Report recorded successfully and draft report is deleted successfully"});
-		return;
 	});
 });
 
 app.get("/wsbe/reports", (request, response) => {
 	WSReport.findAll((err, reports) => {
 		if (err) {
-			response.status(500).json({error: "Could not fetch reports"});
-			return;
+			let msg = errorMessages.fetchReportsError;
+			console.log(msg);
+			return response.status(500).json({error: msg});
 		}
-		response.json(reports);
-		return;
+		return response.json(reports);
 	});
 });
 
 app.post("/wsbe/draft", (request, response) => {
+	// Check if a draft report already exsits
 	DraftReport.findAll((err, report) => {
 		console.log(request.body);
 		if (err) {
-			response.status(500).json({error: "Could not fetch draft report"});
-			return;
+			let msg = errorMessages.fetchDraftReportError;
+			console.log(msg);
+			return response.status(500).json({error: msg});
 		}
 		if (report.length > 0 ){
-			response.status(500).json({error: "A draft report already exists"});
-			return;
+			let msg = errorMessages.draftExists;
+			console.log(msg);
+			return response.status(500).json({error: msg});
 		}
+		
 		let data = {
 			report_date: request.body.report_date,
 			ws_start: request.body.ws_start,
@@ -102,15 +111,14 @@ app.post("/wsbe/draft", (request, response) => {
 			planForWeek: request.body.planForWeek
 		};
 		console.log("Draft Report data: ", data);
-
 		let draft = new DraftReport(data);
 		draft.save((err, draft) => {
 			if (err) {
-				response.status(500).json({error: "Error saving the draft report"});
-				return;
+				let msg = errorMessages.saveDraftError;
+				console.log(msg);
+				return response.status(500).json({error: msg});
 			}
-			response.json({success: "Draft Report recorded successfully"});
-			return;
+			return response.json({success: "A new draft report recorded successfully"});
 		});
 	});
 });
@@ -118,16 +126,17 @@ app.post("/wsbe/draft", (request, response) => {
 app.put("/wsbe/draft", (request, response) => {
 	DraftReport.findAll((err, drafts) => {
 		if (err) {
-			response.status(500).json({error: "Could not fetch draft report"});
-			return;
+			let msg = errorMessages.fetchDraftReportError;
+			console.log(msg);
+			return response.status(500).json({error: msg});
 		}
 		DraftReport.findByIdAndUpdate(drafts[0]._id, request.body, {new: true}, (error, newDraft) => {
 			if (error) {
-				response.status(500).json({error: "Could not update draft report"});
-				return;
+				let msg = errorMessages.updateDraftError;
+				console.log(msg);
+				return response.status(500).json({error: msg});
 			}
-			response.json({updatedDraft: newDraft});
-			return;
+			return response.json({updatedDraft: newDraft});
 		});
 	});
 });
@@ -135,11 +144,11 @@ app.put("/wsbe/draft", (request, response) => {
 app.get("/wsbe/draft", (request, response) => {
 	DraftReport.findAll((err, drafts) => {
 		if (err) {
-			response.status(500).json({error: "Could not fetch draft report"});
-			return;
+			let msg = errorMessages.fetchDraftReportError;
+			console.log(msg);
+			return response.status(500).json({error: msg});
 		}
-		response.json(drafts);
-		return;
+		return response.json(drafts);
 	});
 });
 
