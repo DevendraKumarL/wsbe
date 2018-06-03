@@ -1,6 +1,7 @@
 const express = require("express"),
 	bodyParser = require("body-parser"),
 	mongoose = require("mongoose"),
+	ObjectID = require("mongodb").ObjectID,
 	WSReport = require("./models/report"),
 	DraftReport = require("./models/draft"),
 	errorMessages = require("./errorMessages");
@@ -27,51 +28,53 @@ db.on('open', () => {
 
 app.use((req, res, next) => {
 	res.setHeader("Access-Control-Allow-Origin", "*");
-	res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
+	res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
 	res.setHeader("Access-Control-Allow-Headers", "X-Requested-With,Content-Type");
 	res.setHeader("Access-Control-Allow-Credentials", true);
 	next();
 });
 
-// TODO: Error: Can't set headers after they are sent.
-
 app.post("/wsbe/report", (request, response) => {
 	// Delete draft report first
 	DraftReport.findAll((err, drafts) => {
+		let msg = errorMessages.fetchDraftReportError;
 		if (err) {
-			let msg = errorMessages.fetchDraftReportError;
 			console.log(msg);
 			return response.status(500).json({error: msg});
 		}
-		DraftReport.findByIdAndRemove(drafts[0]._id, (error, draft) => {
-			if (error) {
-				let msg = errorMessages.deleteDraftError;
-				console.log(msg);
-				return response.status(500).json({error: msg});
-			}
-			console.log("A draft report was deleted successfully");
+		if (drafts[0]._id !== undefined) {
 			
-			let data = {
-				report_date: request.body.report_date,
-					ws_start: request.body.ws_start,
-				ws_end: request.body.ws_end,
-				bugzillaURL: request.body.bugzillaURL,
-				highlights: request.body.highlights,
-				codeReviews: request.body.codeReviews,
-				planForWeek: request.body.planForWeek
-			};
-			console.log("Main Report data: ", data);
-			let report = new WSReport(data);
-			report.save((err, report) => {
-				if (err) {
-					let msg = errorMessages.saveReportError;
+			DraftReport.findByIdAndRemove(drafts[0]._id, (error, draft) => {
+				if (error) {
+					let msg = errorMessages.deleteDraftError;
 					console.log(msg);
-					return response.status(500).json({error: msg})
+					return response.status(500).json({error: msg});
 				}
-				return response.json({success: "A new report recorded successfully"});
+				
+				let data = {
+					report_date: request.body.report_date,
+						ws_start: request.body.ws_start,
+					ws_end: request.body.ws_end,
+					bugzillaURL: request.body.bugzillaURL,
+					highlights: request.body.highlights,
+					codeReviews: request.body.codeReviews,
+					planForWeek: request.body.planForWeek
+				};
+				console.log("Main Report data: ", data);
+				let report = new WSReport(data);
+				report.save((err, report) => {
+					if (err) {
+						let msg = errorMessages.saveReportError;
+						console.log(msg);
+						return response.status(500).json({error: msg})
+					}
+					return response.json({success: "A new report recorded successfully"});
+				});
 			});
-
-		});
+		}
+		else {
+			return response.status(500).json({error: msg});
+		}
 	});
 });
 
@@ -89,7 +92,7 @@ app.get("/wsbe/reports", (request, response) => {
 app.post("/wsbe/draft", (request, response) => {
 	// Check if a draft report already exsits
 	DraftReport.findAll((err, report) => {
-		console.log(request.body);
+		console.log("Draft report: ", request.body);
 		if (err) {
 			let msg = errorMessages.fetchDraftReportError;
 			console.log(msg);
@@ -110,7 +113,6 @@ app.post("/wsbe/draft", (request, response) => {
 			codeReviews: request.body.codeReviews,
 			planForWeek: request.body.planForWeek
 		};
-		console.log("Draft Report data: ", data);
 		let draft = new DraftReport(data);
 		draft.save((err, draft) => {
 			if (err) {
@@ -124,20 +126,26 @@ app.post("/wsbe/draft", (request, response) => {
 });
 
 app.put("/wsbe/draft", (request, response) => {
+	console.log("Update draft: ", request.body);
 	DraftReport.findAll((err, drafts) => {
+		let msg = errorMessages.fetchDraftReportError;
 		if (err) {
-			let msg = errorMessages.fetchDraftReportError;
 			console.log(msg);
 			return response.status(500).json({error: msg});
 		}
-		DraftReport.findByIdAndUpdate(drafts[0]._id, request.body, {new: true}, (error, newDraft) => {
-			if (error) {
-				let msg = errorMessages.updateDraftError;
-				console.log(msg);
-				return response.status(500).json({error: msg});
-			}
-			return response.json({updatedDraft: newDraft});
-		});
+		if (drafts[0]._id !== undefined) {
+			DraftReport.findByIdAndUpdate(drafts[0]._id, request.body, {new: true}, (error, newDraft) => {
+				if (error) {
+					let msg = errorMessages.updateDraftError;
+					console.log(msg);
+					return response.status(500).json({error: msg});
+				}
+				return response.json({updatedDraft: newDraft});
+			});
+		}
+		else {
+			return response.status(500).json({error: msg});
+		}
 	});
 });
 
@@ -149,6 +157,17 @@ app.get("/wsbe/draft", (request, response) => {
 			return response.status(500).json({error: msg});
 		}
 		return response.json(drafts);
+	});
+});
+
+app.delete("/wsbe/draft/:id", (request, response) => {
+	DraftReport.findByIdAndRemove(ObjectID(request.params["id"]), (err, resp) => {
+		if (err) {
+			let msg = errorMessages.fetchDraftReportError;
+			console.log(msg);
+			return response.status(500).json({error: msg});
+		}
+		return response.json({success: "Draft report deleted successfully"});
 	});
 });
 
