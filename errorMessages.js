@@ -9,7 +9,7 @@ module.exports = {
 
 	saveReportError: "Error saving the report",
 
-	fetchReportsError: "Could not fetch reports",
+	fetchReportsError: "Could not fetch all reports",
 
-
+	fetchReportError: "Could not fetch the report"
 };

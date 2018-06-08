@@ -89,6 +89,17 @@ app.get("/wsbe/reports", (request, response) => {
 	});
 });
 
+app.get("/wsbe/report/:id", (request, response) => {
+	WSReport.findById(ObjectID(request.params["id"]), (err, report) => {
+		if (err) {
+			let msg = errorMessages.fetchReportError;
+			console.log(msg);
+			return response.status(500).json({error: msg});
+		}
+		return response.json(report);
+	});
+});
+
 app.post("/wsbe/draft", (request, response) => {
 	// Check if a draft report already exsits
 	DraftReport.findAll((err, report) => {
