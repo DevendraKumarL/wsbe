@@ -4,13 +4,14 @@ const express = require("express"),
 	ObjectID = require("mongodb").ObjectID,
 	WSReport = require("./models/report"),
 	DraftReport = require("./models/draft"),
+	MailSettings = require("./models/mailsettings"),
 	errorMessages = require("./errorMessages");
 
 const app = express();
 
 app.use(bodyParser.json());
 
-const appPort = 5000;
+const appPort = 5002;
 
 let isConnectedToDB = false;
 const dbURL = "mongodb://localhost:27017/wsdb"
@@ -34,26 +35,28 @@ app.use((req, res, next) => {
 	next();
 });
 
+// TODO: move the api methods a controller
+
 app.post("/wsbe/report", (request, response) => {
 	// Delete draft report first
 	DraftReport.findAll((err, drafts) => {
 		let msg = errorMessages.fetchDraftReportError;
 		if (err) {
 			console.log(msg);
-			return response.status(500).json({error: msg});
+			return response.status(500).json({ error: msg });
 		}
 		if (drafts[0]._id !== undefined) {
-			
+
 			DraftReport.findByIdAndRemove(drafts[0]._id, (error, draft) => {
 				if (error) {
 					let msg = errorMessages.deleteDraftError;
 					console.log(msg);
-					return response.status(500).json({error: msg});
+					return response.status(500).json({ error: msg });
 				}
-				
+
 				let data = {
 					report_date: request.body.report_date,
-						ws_start: request.body.ws_start,
+					ws_start: request.body.ws_start,
 					ws_end: request.body.ws_end,
 					bugzillaURL: request.body.bugzillaURL,
 					highlights: request.body.highlights,
@@ -66,14 +69,14 @@ app.post("/wsbe/report", (request, response) => {
 					if (err) {
 						let msg = errorMessages.saveReportError;
 						console.log(msg);
-						return response.status(500).json({error: msg})
+						return response.status(500).json({ error: msg })
 					}
-					return response.json({success: "A new report recorded successfully"});
+					return response.json({ success: "A new report recorded successfully" });
 				});
 			});
 		}
 		else {
-			return response.status(500).json({error: msg});
+			return response.status(500).json({ error: msg });
 		}
 	});
 });
@@ -83,7 +86,7 @@ app.get("/wsbe/reports", (request, response) => {
 		if (err) {
 			let msg = errorMessages.fetchReportsError;
 			console.log(msg);
-			return response.status(500).json({error: msg});
+			return response.status(500).json({ error: msg });
 		}
 		return response.json(reports);
 	});
@@ -94,7 +97,7 @@ app.get("/wsbe/report/:id", (request, response) => {
 		if (err) {
 			let msg = errorMessages.fetchReportError;
 			console.log(msg);
-			return response.status(500).json({error: msg});
+			return response.status(500).json({ error: msg });
 		}
 		return response.json(report);
 	});
@@ -107,14 +110,14 @@ app.post("/wsbe/draft", (request, response) => {
 		if (err) {
 			let msg = errorMessages.fetchDraftReportError;
 			console.log(msg);
-			return response.status(500).json({error: msg});
+			return response.status(500).json({ error: msg });
 		}
-		if (report.length > 0 ){
+		if (report.length > 0) {
 			let msg = errorMessages.draftExists;
 			console.log(msg);
-			return response.status(500).json({error: msg});
+			return response.status(500).json({ error: msg });
 		}
-		
+
 		let data = {
 			report_date: request.body.report_date,
 			ws_start: request.body.ws_start,
@@ -129,9 +132,9 @@ app.post("/wsbe/draft", (request, response) => {
 			if (err) {
 				let msg = errorMessages.saveDraftError;
 				console.log(msg);
-				return response.status(500).json({error: msg});
+				return response.status(500).json({ error: msg });
 			}
-			return response.json({success: "A new draft report recorded successfully"});
+			return response.json({ success: "A new draft report recorded successfully" });
 		});
 	});
 });
@@ -142,20 +145,20 @@ app.put("/wsbe/draft", (request, response) => {
 		let msg = errorMessages.fetchDraftReportError;
 		if (err) {
 			console.log(msg);
-			return response.status(500).json({error: msg});
+			return response.status(500).json({ error: msg });
 		}
 		if (drafts[0]._id !== undefined) {
-			DraftReport.findByIdAndUpdate(drafts[0]._id, request.body, {new: true}, (error, newDraft) => {
+			DraftReport.findByIdAndUpdate(drafts[0]._id, request.body, { new: true }, (error, newDraft) => {
 				if (error) {
 					let msg = errorMessages.updateDraftError;
 					console.log(msg);
-					return response.status(500).json({error: msg});
+					return response.status(500).json({ error: msg });
 				}
-				return response.json({updatedDraft: newDraft});
+				return response.json({ updatedDraft: newDraft });
 			});
 		}
 		else {
-			return response.status(500).json({error: msg});
+			return response.status(500).json({ error: msg });
 		}
 	});
 });
@@ -165,7 +168,7 @@ app.get("/wsbe/draft", (request, response) => {
 		if (err) {
 			let msg = errorMessages.fetchDraftReportError;
 			console.log(msg);
-			return response.status(500).json({error: msg});
+			return response.status(500).json({ error: msg });
 		}
 		return response.json(drafts);
 	});
@@ -176,9 +179,38 @@ app.delete("/wsbe/draft/:id", (request, response) => {
 		if (err) {
 			let msg = errorMessages.fetchDraftReportError;
 			console.log(msg);
-			return response.status(500).json({error: msg});
+			return response.status(500).json({ error: msg });
 		}
-		return response.json({success: "Draft report deleted successfully"});
+		return response.json({ success: "Draft report deleted successfully" });
+	});
+});
+
+app.get("/wsbe/mailsettings", (request, response) => {
+	MailSettings.findAll((err, settings) => {
+		if (err) {
+			let msg = errorMessages.fetchMailSettingsError;
+			return response.status(500).json({ error: msg });
+		}
+		return response.json(settings);
+	});
+});
+
+app.put("/wsbe/mailsettings", (request, response) => {
+	let msettings = {
+		from_: request.body.from_,
+		from_name: request.body.from_name,
+		to_: request.body.to_,
+		to_name: request.body.to_name,
+		project_name: request.body.project_name
+	};
+	let query = {};
+	let options = { upsert: true, new: true, setDefaultsOnInsert: true };
+	MailSettings.findOneAndUpdate(query, msettings, options, (err, mailSettings) => {
+		if (err) {
+			let msg = errorMessages.updateMailSettingsError;
+			return response.status(500).json({ error: msg });
+		}
+		return response.json({ success: "Mail settings updated successfully", mailSettings: mailSettings });
 	});
 });
 
