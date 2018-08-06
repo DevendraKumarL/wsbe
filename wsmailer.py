@@ -60,7 +60,7 @@ def createEmail(to_name, from_name, report, project_name):
 			</ul>
 			------------<br>
 			Thanks,<br>
-			""" + to_name + """<br><br>
+			""" + from_name + """<br><br>
 
 			<i>*** Auto-genereted using <a href="https://github.com/DevendraKumarL/wsreporter">WSReporter</a> ***</i>
 			"""
