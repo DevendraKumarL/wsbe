@@ -185,6 +185,17 @@ app.delete("/wsbe/draft/:id", (request, response) => {
 	});
 });
 
+app.delete("/wsbe/report/:id", (request, response) => {
+	WSReport.findByIdAndRemove(ObjectID(request.params["id"]), (err, resp) => {
+		if (err) {
+			let msg = errorMessages.fetchReportError;
+			console.log(msg)
+			return response.status(500).json({ error: msg });
+		}
+		return response.json({ success: "Report deleted successfully" });
+	});
+});
+
 app.get("/wsbe/mailsettings", (request, response) => {
 	MailSettings.findAll((err, settings) => {
 		if (err) {

@@ -18,7 +18,7 @@ def createEmail(to_name, from_name, report, project_name):
 	highlights = report['highlights'].split("<br>")
 	codeReviews = report['codeReviews'].split("<br>")
 	planForWeek = report['planForWeek'].split("<br>")
-	bugzillaURL = report['bugzillaURL']
+	bugzillaURL = report['bugzillaURL'].split("<br>")
 	ws_start = report['ws_start']
 	ws_end = report['ws_end']
 	project_name = project_name
@@ -62,7 +62,7 @@ def createEmail(to_name, from_name, report, project_name):
 			Thanks,<br>
 			""" + from_name + """<br><br>
 
-			<i>*** Auto-genereted using <a href="https://github.com/DevendraKumarL/wsreporter">WSReporter</a> ***</i>
+			<i>*** Auto-generated using <a href="https://github.com/DevendraKumarL/wsreporter">WSReporter</a> ***</i>
 			"""
 
 
