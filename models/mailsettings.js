@@ -6,8 +6,7 @@ let mailSettingsSchema = new Schema({
     from_: String,
     from_name: String,
     to_: String,
-    to_name: String,
-    project_name: String
+    to_name: String
 });
 
 mailSettingsSchema.statics.findAll = function(callback) {

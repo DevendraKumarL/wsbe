@@ -6,6 +6,7 @@ let reportSchema = new Schema({
 	report_date: Date,
 	ws_start: Date,
 	ws_end: Date,
+	project: String,
 	bugzillaURL: String,
 	highlights: String,
 	codeReviews: String,

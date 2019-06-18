@@ -14,55 +14,15 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-def createEmail(to_name, from_name, report, project_name):
-	highlights = report['highlights'].split("<br>")
-	codeReviews = report['codeReviews'].split("<br>")
-	planForWeek = report['planForWeek'].split("<br>")
-	bugzillaURL = report['bugzillaURL'].split("<br>")
-	ws_start = report['ws_start']
-	ws_end = report['ws_end']
-	project_name = project_name
+def createEmail(to_name, from_name, report):
 	to_name = to_name
 	from_name = from_name
 
-	highlights_html  = ""
-	codeReviews_html = ""
-	planForWeek_html = ""
-	for h in highlights:
-		highlights_html  = highlights_html  + "<li>" + h + "</li>"
-	for c in codeReviews:
-		codeReviews_html = codeReviews_html + "<li>" + c + "</li>"
-	for p in planForWeek:
-		planForWeek_html = planForWeek_html + "<li>" + p + "</li>"
-
 	return """
-			Hi """ + to_name + """,<br>
+			Hi """ + to_name + """,<br>------------<br>""" + report + """
 			------------<br>
-			<span>WSR for the Period: """ + ws_start + """ - """ + ws_end + """</span><br>
-			<span>Project: """ + project_name + """</span>
-			<ul>
-				<li>
-					Highlights
-					<ul>""" + highlights_html + """</ul>
-				</li>
-				<li>
-					Bugs
-					<ul><li><a href='""" + bugzillaURL + """'>Bugzilla manager report for the above peroid</a></li></ul>
-				</li>
-				<li>
-					Code Reviews
-					<ul>""" + codeReviews_html + """</ul>
-				</li>
-				<li>
-					Plan for this week
-					<ul>""" + planForWeek_html + """</ul>
-				</li>
-			</ul>
-			------------<br>
-			Thanks,<br>
-			""" + from_name + """<br><br>
-
-			<i>*** Auto-generated using <a href="https://github.com/DevendraKumarL/wsreporter">WSReporter</a> ***</i>
+			Thanks,<br>""" + from_name + """<br><br>
+			<i>Auto-generated using <a href="https://github.com/DevendraKumarL/wsreporter">WSReporter</a></i>
 			"""
 
 
@@ -75,10 +35,11 @@ def sendmail_smtp():
 	to_ = requestData['to_']
 	to_name = requestData['to_name']
 	pass_ = requestData['pass_']
-	report = requestData['report']
+	report = requestData['reportHTML']
 
-	subject_ = "WSR - " + report['report_date']
-	body_ = createEmail(to_name, from_name, report, requestData['project_name'])
+	r = requestData['report']
+	subject_ = "WSR - " + r['report_date']
+	body_ = createEmail(to_name, from_name, report)
 
 	msg = MIMEMultipart()
 	msg["From"] = from_
@@ -111,10 +72,11 @@ def sendmail_outlook():
 	from_name = requestData['from_name']
 	to_ = requestData['to_']
 	to_name = requestData['to_name']
-	report = requestData['report']
+	report = requestData['reportHTML']
 
-	subject_ = "WSR - " + report['report_date']
-	body_ = createEmail(to_name, from_name, report, requestData['project_name'])
+	r = requestData['report']
+	subject_ = "WSR - " + r['report_date']
+	body_ = createEmail(to_name, from_name, report)
 
 	outlook = win32.Dispatch('outlook.application')
 	mail = outlook.CreateItem(0)

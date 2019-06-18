@@ -2,9 +2,11 @@ const express = require("express"),
 	bodyParser = require("body-parser"),
 	mongoose = require("mongoose"),
 	ObjectID = require("mongodb").ObjectID,
+
 	WSReport = require("./models/report"),
 	DraftReport = require("./models/draft"),
 	MailSettings = require("./models/mailsettings"),
+
 	errorMessages = require("./errorMessages");
 
 const app = express();
@@ -15,7 +17,7 @@ const appPort = 5002;
 
 let isConnectedToDB = false;
 const dbURL = "mongodb://localhost:27017/wsdb"
-mongoose.connect(dbURL);
+mongoose.connect(dbURL, { useNewUrlParser: true });
 
 let db = mongoose.connection;
 db.on('error', (err) => {
@@ -34,8 +36,6 @@ app.use((req, res, next) => {
 	res.setHeader("Access-Control-Allow-Credentials", true);
 	next();
 });
-
-// TODO: move the api methods a controller
 
 app.post("/wsbe/report", (request, response) => {
 	// Delete draft report first
@@ -58,6 +58,7 @@ app.post("/wsbe/report", (request, response) => {
 					report_date: request.body.report_date,
 					ws_start: request.body.ws_start,
 					ws_end: request.body.ws_end,
+					project: request.body.project,
 					bugzillaURL: request.body.bugzillaURL,
 					highlights: request.body.highlights,
 					codeReviews: request.body.codeReviews,
@@ -122,6 +123,7 @@ app.post("/wsbe/draft", (request, response) => {
 			report_date: request.body.report_date,
 			ws_start: request.body.ws_start,
 			ws_end: request.body.ws_end,
+			project: request.body.project,
 			bugzillaURL: request.body.bugzillaURL,
 			highlights: request.body.highlights,
 			codeReviews: request.body.codeReviews,
@@ -211,8 +213,7 @@ app.put("/wsbe/mailsettings", (request, response) => {
 		from_: request.body.from_,
 		from_name: request.body.from_name,
 		to_: request.body.to_,
-		to_name: request.body.to_name,
-		project_name: request.body.project_name
+		to_name: request.body.to_name
 	};
 	let query = {};
 	let options = { upsert: true, new: true, setDefaultsOnInsert: true };
@@ -227,5 +228,5 @@ app.put("/wsbe/mailsettings", (request, response) => {
 
 app.set("port", appPort);
 app.listen(app.get("port"), '0.0.0.0', () => {
-	console.log("wsbe-api app is running...");
+	console.log("wsbe-api server is running: localhost:" + app.get("port"));
 });
